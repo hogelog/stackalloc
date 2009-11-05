@@ -39,13 +39,13 @@ void test01() {
   Stack *s = &s_;
   int i, j;
   obstack_init(s);
-  for(i=0;i<10;++i) {
+  for(i=0;i<100000;++i) {
     int *sum = new_int(s, 1);
     Array *a = new_range(s, 1, 1024);
-    for(j=0;j<10;++j) {
+    for(j=0;j<1024;++j) {
       int *p = array_elem(a, j);
       *sum *= *p;
-      printf("%2d(%p) = %7d(%p)\n", *p, p, *sum, sum);
+      //printf("%2d(%p) = %7d(%p)\n", *p, p, *sum, sum);
     }
     obstack_free(s, sum);
   }

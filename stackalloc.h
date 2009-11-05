@@ -1,9 +1,14 @@
 #include <stdlib.h>
 
+typedef struct FObject {
+  void *obj;
+  struct FObject *next;
+} FObject;
 typedef struct Frame {
   struct Frame *prevframe;
   void *top;
   size_t index;
+  FObject *list;
 } Frame;
 typedef struct Slot {
   void *slot;
@@ -13,14 +18,14 @@ typedef struct Slot {
 typedef struct Stack {
   Slot *slots;
   size_t slotsnum;
-  Frame *lastframe;
-  void *top;
-  size_t index;
+  Frame *last;
+  Frame cur;
 } Stack;
 
 #define STACK_MINSLOTSIZE 1024
 
 void *stack_alloc(Stack *s, size_t size);
+void *stack_lalloc(Stack *s, size_t size);
 Frame *stack_newframe(Stack *s);
 Frame *stack_closeframe(Stack *s);
 Stack *stack_init(Stack *s);

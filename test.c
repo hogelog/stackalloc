@@ -14,7 +14,7 @@ typedef struct Array {
 } Array;
 #define array_elem(a, i) ((void*)&((a)->buffer[(a)->size*(i)]))
 static Array *new_array(Stack *s, size_t size, size_t len) {
-  Array *a = stack_alloc(s, sizeof(Array)+size*(len-1));
+  Array *a = stack_lalloc(s, sizeof(Array)+size*(len-1));
   a->size = size;
   a->length = len;
   return a;
@@ -34,14 +34,14 @@ void test01() {
   Stack *s = &s_;
   int i, j;
   stack_init(s);
-  for(i=0;stack_newframe(s) && i<10000;++i) {
+  for(i=0;i<100000 && stack_newframe(s);++i) {
     int *sum = new_int(s, 1);
     Array *a = new_range(s, 1, 1024);
-    for(j=0;stack_newframe(s) && j<1024;++j) {
+    *sum = 1;
+    for(j=0;j<1024;++j) {
       int *p = array_elem(a, j);
       *sum *= *p;
-      printf("%2d(%p) = %7d(%p)\n", *p, p, *sum, sum);
-      stack_closeframe(s);
+      //printf("%2d(%p) = %7d(%p)\n", *p, p, *sum, sum);
     }
     stack_closeframe(s);
   }

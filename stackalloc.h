@@ -27,7 +27,7 @@ typedef struct OStack {
 void *stack_alloc(OStack *s, size_t size);
 void *stack_lalloc(OStack *s, size_t size);
 Frame *stack_newframe(OStack *s);
-Frame *stack_closeframe(OStack *s);
+Frame *stack_closeframe(OStack *s, Frame *f);
 OStack *stack_init(OStack *s);
 void stack_close(OStack *s);
 

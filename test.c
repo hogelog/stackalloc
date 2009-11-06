@@ -34,7 +34,8 @@ void test01() {
   OStack *s = &s_;
   int i, j;
   stack_init(s);
-  for(i=0;i<100000 && stack_newframe(s);++i) {
+  for(i=0;i<100000;++i) {
+    Frame *f = stack_newframe(s);
     int *sum = new_int(s, 1);
     Array *a = new_range(s, 1, 1024);
     *sum = 1;
@@ -43,7 +44,7 @@ void test01() {
       *sum *= *p;
       //printf("%2d(%p) = %7d(%p)\n", *p, p, *sum, sum);
     }
-    stack_closeframe(s);
+    stack_closeframe(s, f);
   }
   stack_close(s);
 }

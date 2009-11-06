@@ -9,28 +9,23 @@ static Slot *addslot(OStack *s, size_t slotsize) {
   return s->slots[n].start;
 }
 static size_t stack_grow(OStack *s) {
-  size_t nextindex = s->cur.index + 1;
   size_t slotsnum = s->slotsnum;
   int i;
   size_t newsize = 0;
-  if (nextindex < slotsnum) return ++s->cur.index;
   for(i=0;i<slotsnum;++i) {
     Slot *slot = &s->slots[i];
     newsize += (char*)slot->end - (char*) slot->start;
   }
   addslot(s, newsize);
-  s->cur.index = nextindex;
-  s->cur.top = s->slots[nextindex].start;
-  return s->cur.index;
+  return s->slotsnum;
 }
 void *stack_alloc(OStack *s, size_t size) {
   void *new = s->cur.top;
   void *newtop = (void*)((char*)new + size);
   Slot *curslot = &s->slots[s->cur.index];
   while (newtop > curslot->end) {
-    if (s->cur.index < s->slotsnum)
-      ++s->cur.index;
-    else
+    ++s->cur.index;
+    if (s->cur.index == s->slotsnum)
       stack_grow(s);
     s->cur.top = s->slots[s->cur.index].start;
     curslot = &s->slots[s->cur.index];
@@ -59,16 +54,20 @@ Frame *stack_newframe(OStack *s) {
   s->last = f;
   return f;
 }
-Frame *stack_closeframe(OStack *s) {
+Frame *stack_closeframe(OStack *s, Frame *f) {
   Frame *last = s->last;
-  while(last->list!=NULL) {
-    void *o = last->list->obj;
-    last->list = last->list->next;
-    free(o);
+  while (last != f->prevframe) {
+    while (last->list!=NULL) {
+      void *o = last->list->obj;
+      last->list = last->list->next;
+      free(o);
+    }
+    last = last->prevframe;
   }
-  s->cur = *last;
-  s->last = last->prevframe;
-  return last;
+  s->cur.top = f->top;
+  s->cur.index = f->index;
+  s->last = f->prevframe;
+  return f;
 }
 OStack *stack_init(OStack *s) {
   s->slots = malloc(sizeof(Slot));

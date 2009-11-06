@@ -82,9 +82,15 @@ OStack *stack_init(OStack *s) {
 }
 void stack_close(OStack *s) {
   int i;
-  for(i=s->slotsnum-1;i>=0;--i) {
-    free(s->slots[i].start);
+  while (s->last)
+    stack_closeframe(s, s->last);
+  while (s->cur.list!=NULL) {
+    void *o = s->cur.list->obj;
+    s->cur.list = s->cur.list->next;
+    free(o);
   }
+  for (i=s->slotsnum-1;i>=0;--i)
+    free(s->slots[i].start);
   free(s->slots);
   s->slots = NULL;
 }

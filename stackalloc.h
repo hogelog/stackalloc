@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 typedef struct FObject {
-  void *obj;
   struct FObject *next;
 } FObject;
 typedef struct Frame {
@@ -19,7 +18,8 @@ typedef struct OStack {
   Slot *slots;
   size_t slotsnum;
   Frame *last;
-  Frame cur;
+  void *top;
+  size_t index;
 } OStack;
 
 #define OSTACK_MINSLOTSIZE 1024

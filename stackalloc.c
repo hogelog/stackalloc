@@ -20,32 +20,33 @@ static size_t stack_grow(OStack *s) {
   return s->slotsnum;
 }
 void *stack_alloc(OStack *s, size_t size) {
-  void *new = s->cur.top;
+  void *new = s->top;
   void *newtop = (void*)((char*)new + size);
-  Slot *curslot = &s->slots[s->cur.index];
+  Slot *curslot = &s->slots[s->index];
   while (newtop > curslot->end) {
-    ++s->cur.index;
-    if (s->cur.index == s->slotsnum)
+    ++s->index;
+    if (s->index == s->slotsnum)
       stack_grow(s);
-    s->cur.top = s->slots[s->cur.index].start;
-    curslot = &s->slots[s->cur.index];
+    s->top = s->slots[s->index].start;
+    curslot = &s->slots[s->index];
     new = curslot->start;
     newtop = (void*)((char*)new + size);
   }
-  s->cur.top = newtop;
+  s->top = newtop;
   return new;
 }
 void *stack_lalloc(OStack *s, size_t size) {
-  Frame *f = s->last ? s->last : &s->cur;
-  FObject *fo = stack_alloc(s, sizeof(FObject));
+  FObject *fo;
+  Frame *f = s->last;
+  if (!f) return NULL;
+  fo = malloc(sizeof(FObject)+size);
   fo->next = f->list;
-  fo->obj = malloc(size);
   f->list = fo;
-  return fo->obj;
+  return (void*)(fo + 1);
 }
 Frame *stack_newframe(OStack *s) {
-  void *ptop = s->cur.top;
-  size_t pindex = s->cur.index;
+  void *ptop = s->top;
+  size_t pindex = s->index;
   Frame *f = stack_alloc(s, sizeof(Frame));
   f->prevframe = s->last;
   f->top = ptop;
@@ -58,14 +59,14 @@ Frame *stack_closeframe(OStack *s, Frame *f) {
   Frame *last = s->last;
   while (last != f->prevframe) {
     while (last->list!=NULL) {
-      void *o = last->list->obj;
+      FObject *o = last->list;
       last->list = last->list->next;
       free(o);
     }
     last = last->prevframe;
   }
-  s->cur.top = f->top;
-  s->cur.index = f->index;
+  s->top = f->top;
+  s->index = f->index;
   s->last = f->prevframe;
   return f;
 }
@@ -75,20 +76,14 @@ OStack *stack_init(OStack *s) {
   s->slots[0].end = (void*)((char*)s->slots[0].start + OSTACK_MINSLOTSIZE);
   s->slotsnum = 1;
   s->last = NULL;
-  s->cur.top = s->slots[0].start;
-  s->cur.index = 0;
-  s->cur.list = NULL;
+  s->top = s->slots[0].start;
+  s->index = 0;
   return s;
 }
 void stack_close(OStack *s) {
   int i;
   while (s->last)
     stack_closeframe(s, s->last);
-  while (s->cur.list!=NULL) {
-    void *o = s->cur.list->obj;
-    s->cur.list = s->cur.list->next;
-    free(o);
-  }
   for (i=s->slotsnum-1;i>=0;--i)
     free(s->slots[i].start);
   free(s->slots);

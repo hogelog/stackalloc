@@ -41,6 +41,7 @@ void test01() {
     *sum = 1;
     for(j=0;j<1024;++j) {
       int *p = array_elem(a, j);
+      //stack_fmove(s, f, fo);
       *sum *= *p;
       //printf("%2d(%p) = %7d(%p)\n", *p, p, *sum, sum);
     }

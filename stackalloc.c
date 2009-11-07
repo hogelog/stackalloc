@@ -35,13 +35,18 @@ void *stack_alloc(OStack *s, size_t size) {
   s->top = newtop;
   return new;
 }
+#define setflist(f,fo) { \
+    (fo)->prev = &(f)->list; \
+    (fo)->next = (f)->list.next; \
+    if ((f)->list.next) (f)->list.next->prev = (fo); \
+    (f)->list.next = (fo); \
+  }
 void *stack_lalloc(OStack *s, size_t size) {
   FObject *fo;
   Frame *f = s->last;
   if (!f) return NULL;
   fo = malloc(sizeof(FObject)+size);
-  fo->next = f->list;
-  f->list = fo;
+  setflist(f, fo);
   return (void*)(fo + 1);
 }
 Frame *stack_newframe(OStack *s) {
@@ -51,16 +56,18 @@ Frame *stack_newframe(OStack *s) {
   f->prevframe = s->last;
   f->top = ptop;
   f->index = pindex;
-  f->list = NULL;
+  f->list.prev = NULL;
+  f->list.next = NULL;
   s->last = f;
   return f;
 }
 Frame *stack_closeframe(OStack *s, Frame *f) {
   Frame *last = s->last;
   while (last != f->prevframe) {
-    while (last->list!=NULL) {
-      FObject *o = last->list;
-      last->list = last->list->next;
+    FObject *list = &last->list;
+    while (list->next!=NULL) {
+      FObject *o = list->next;
+      list->next = list->next->next;
       free(o);
     }
     last = last->prevframe;
@@ -88,4 +95,10 @@ void stack_close(OStack *s) {
     free(s->slots[i].start);
   free(s->slots);
   s->slots = NULL;
+}
+Frame *stack_fmove(OStack *s, Frame *to, FObject *fo) {
+  if (fo->next) fo->next->prev = fo->prev;
+  fo->prev->next = fo->next;
+  setflist(to, fo);
+  return to;
 }
